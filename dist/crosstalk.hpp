@@ -4796,6 +4796,111 @@ REFL_END
 
 #endif // REFL_INCLUDE_HPP
 
+// --- .hpp ---
+// The MIT License (MIT)
+//
+// Copyright (c) 2025 Stefan Fabian
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#ifndef CROSSTALK_ENDIAN_HPP
+#define CROSSTALK_ENDIAN_HPP
+
+#include <cstdint>
+#if defined( __cpp_lib_endian ) && __cpp_lib_endian >= 201907L
+  #include <bit>
+#endif
+
+namespace crosstalk
+{
+#if defined( __BYTE_ORDER__ ) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ ||                         \
+    defined( __BIG_ENDIAN__ ) || defined( __ARMEB__ ) || defined( __THUMBEB__ ) ||                 \
+    defined( __AARCH64EB__ ) || defined( _MIBSEB ) || defined( __MIBSEB ) || defined( __MIBSEB__ )
+constexpr bool is_little_endian = false; // Big-endian
+#elif defined( __BYTE_ORDER__ ) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ||                    \
+    defined( __LITTLE_ENDIAN__ ) || defined( __ARMEL__ ) || defined( __THUMBEL__ ) ||              \
+    defined( __AARCH64EL__ ) || defined( _MIPSEL ) || defined( __MIPSEL ) || defined( __MIPSEL__ )
+constexpr bool is_little_endian = true; // Little-endian
+#elif defined( __cpp_lib_endian ) && __cpp_lib_endian >= 201907L
+constexpr bool is_little_endian = std::endian::native == std::endian::little;
+#else
+inline const bool is_little_endian = []() { return ( *(const uint16_t *)"\x01\x02" == 0x0201 ); }();
+#endif
+
+#if defined( __cpp_lib_byteswap ) && __cpp_lib_byteswap >= 202110L
+inline constexpr uint16_t byteswap( uint16_t value ) { return std::byteswap( value ); }
+
+inline constexpr uint32_t byteswap( uint32_t value ) { return std::byteswap( value ); }
+
+inline constexpr uint64_t byteswap( uint64_t value ) { return std::byteswap( value ); }
+#else
+inline constexpr uint16_t byteswap( uint16_t value ) { return ( value << 8 ) | ( value >> 8 ); }
+
+inline constexpr uint32_t byteswap( uint32_t value )
+{
+  return ( ( value & 0x000000FF ) << 24 ) | ( ( value & 0x0000FF00 ) << 8 ) |
+         ( ( value & 0x00FF0000 ) >> 8 ) | ( ( value & 0xFF000000 ) >> 24 );
+}
+
+inline constexpr uint64_t byteswap( uint64_t value )
+{
+  return ( ( value & 0x00000000000000FFull ) << 56 ) | ( ( value & 0x000000000000FF00ull ) << 40 ) |
+         ( ( value & 0x0000000000FF0000ull ) << 24 ) | ( ( value & 0x00000000FF000000ull ) << 8 ) |
+         ( ( value & 0x000000FF00000000ull ) >> 8 ) | ( ( value & 0x0000FF0000000000ull ) >> 24 ) |
+         ( ( value & 0x00FF000000000000ull ) >> 40 ) | ( ( value & 0xFF00000000000000ull ) >> 56 );
+}
+#endif
+
+inline constexpr uint16_t hosttole16( uint16_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+inline constexpr uint32_t hosttole32( uint32_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+inline constexpr uint64_t hosttole64( uint64_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+inline constexpr uint16_t le16tohost( uint16_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+inline constexpr uint32_t le32tohost( uint32_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+inline constexpr uint64_t le64tohost( uint64_t value )
+{
+  return is_little_endian ? value : byteswap( value );
+}
+
+} // namespace crosstalk
+
+#endif
+
 // --- _abstraction.hpp ---
 // The MIT License (MIT)
 //
@@ -4869,7 +4974,6 @@ public:
 #define CROSSTALK_CROSSTALKER_HPP
 
 #include <cassert>
-#include <endian.h>
 #include <stddef.h>
 #include <vector>
 
@@ -5033,7 +5137,7 @@ uint16_t CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::_readObjectSize( i
   } else {
     std::memcpy( &serialized_size, &buffer_[index], 2 );
   }
-  return le16toh( serialized_size );
+  return le16tohost( serialized_size );
 }
 
 template<int BUFFER_SIZE, int SERIALIZATION_BUFFER_SIZE>
@@ -5141,7 +5245,7 @@ inline int16_t CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::getObjectId(
   } else {
     std::memcpy( &tmp, &buffer_[index], 2 );
   }
-  tmp = le16toh( tmp );
+  tmp = le16tohost( tmp );
   int16_t result;
   std::memcpy( &result, &tmp, sizeof( int16_t ) );
   return result;
@@ -5209,17 +5313,17 @@ size_t serialize( const T &value, uint8_t *data )
   } else if constexpr ( size == 2 ) {
     uint16_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole16( tmp );
+    tmp = hosttole16( tmp );
     std::memcpy( data, &tmp, size );
   } else if constexpr ( size == 4 ) {
     uint32_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole32( tmp );
+    tmp = hosttole32( tmp );
     std::memcpy( data, &tmp, size );
   } else if constexpr ( size == 8 ) {
     uint64_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole64( tmp );
+    tmp = hosttole64( tmp );
     std::memcpy( data, &tmp, size );
   } else {
     static_assert( size <= 8, "Unsupported type size for serialization." );
@@ -5238,17 +5342,17 @@ size_t deserialize( const uint8_t *data, int length, T &value )
   } else if constexpr ( size == 2 ) {
     uint16_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le16toh( tmp );
+    tmp = le16tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else if constexpr ( size == 4 ) {
     uint32_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le32toh( tmp );
+    tmp = le32tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else if constexpr ( size == 8 ) {
     uint64_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le64toh( tmp );
+    tmp = le64tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else {
     static_assert( size <= 8, "Unsupported type size for deserialization." );
@@ -5400,7 +5504,7 @@ inline ReadResult CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::readObjec
   // Check CRC
   uint16_t crc = 0;
   std::memcpy( &crc, data + serialized_size + 6, 2 );
-  crc = le16toh( crc );
+  crc = le16tohost( crc );
   uint16_t computed_crc = util::compute_crc16( data, 6 + serialized_size );
   size_t consumed = 0;
   if ( crc == computed_crc ) {
@@ -5449,17 +5553,17 @@ inline WriteResult CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::sendObje
   // Write the ID in little-endian format
   uint16_t uid;
   std::memcpy( &uid, &id, sizeof( uint16_t ) );
-  uid = htole16( uid );
+  uid = hosttole16( uid );
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 2 ) = uid;
   // Write the serialized object
   size_t serialized_size = util::serialize<T>( obj, obj_buffer_.data() + 6 );
   // Write the size of the serialized object
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 4 ) =
-      htole16( static_cast<uint16_t>( serialized_size ) );
+      hosttole16( static_cast<uint16_t>( serialized_size ) );
   assert( serialized_size == size - 8 && "Serialized size does not match expected size" );
   // Write the CRC
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 6 + serialized_size ) =
-      htole16( util::compute_crc16( obj_buffer_.data(), 6 + serialized_size ) );
+      hosttole16( util::compute_crc16( obj_buffer_.data(), 6 + serialized_size ) );
   serial_->write( obj_buffer_.data(), size );
   return WriteResult::Success;
 }

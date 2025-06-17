@@ -25,8 +25,8 @@
 
 #include "refl.hpp"
 #include "serial_abstraction.hpp"
+#include "endian.hpp"
 #include <cassert>
-#include <endian.h>
 #include <stddef.h>
 #include <vector>
 
@@ -190,7 +190,7 @@ uint16_t CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::_readObjectSize( i
   } else {
     std::memcpy( &serialized_size, &buffer_[index], 2 );
   }
-  return le16toh( serialized_size );
+  return le16tohost( serialized_size );
 }
 
 template<int BUFFER_SIZE, int SERIALIZATION_BUFFER_SIZE>
@@ -298,7 +298,7 @@ inline int16_t CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::getObjectId(
   } else {
     std::memcpy( &tmp, &buffer_[index], 2 );
   }
-  tmp = le16toh( tmp );
+  tmp = le16tohost( tmp );
   int16_t result;
   std::memcpy( &result, &tmp, sizeof( int16_t ) );
   return result;
@@ -366,17 +366,17 @@ size_t serialize( const T &value, uint8_t *data )
   } else if constexpr ( size == 2 ) {
     uint16_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole16( tmp );
+    tmp = hosttole16( tmp );
     std::memcpy( data, &tmp, size );
   } else if constexpr ( size == 4 ) {
     uint32_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole32( tmp );
+    tmp = hosttole32( tmp );
     std::memcpy( data, &tmp, size );
   } else if constexpr ( size == 8 ) {
     uint64_t tmp = 0;
     std::memcpy( &tmp, &value, size );
-    tmp = htole64( tmp );
+    tmp = hosttole64( tmp );
     std::memcpy( data, &tmp, size );
   } else {
     static_assert( size <= 8, "Unsupported type size for serialization." );
@@ -395,17 +395,17 @@ size_t deserialize( const uint8_t *data, int length, T &value )
   } else if constexpr ( size == 2 ) {
     uint16_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le16toh( tmp );
+    tmp = le16tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else if constexpr ( size == 4 ) {
     uint32_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le32toh( tmp );
+    tmp = le32tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else if constexpr ( size == 8 ) {
     uint64_t tmp = 0;
     std::memcpy( &tmp, data, size );
-    tmp = le64toh( tmp );
+    tmp = le64tohost( tmp );
     std::memcpy( &value, &tmp, size );
   } else {
     static_assert( size <= 8, "Unsupported type size for deserialization." );
@@ -557,7 +557,7 @@ inline ReadResult CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::readObjec
   // Check CRC
   uint16_t crc = 0;
   std::memcpy( &crc, data + serialized_size + 6, 2 );
-  crc = le16toh( crc );
+  crc = le16tohost( crc );
   uint16_t computed_crc = util::compute_crc16( data, 6 + serialized_size );
   size_t consumed = 0;
   if ( crc == computed_crc ) {
@@ -606,17 +606,17 @@ inline WriteResult CrossTalker<BUFFER_SIZE, SERIALIZATION_BUFFER_SIZE>::sendObje
   // Write the ID in little-endian format
   uint16_t uid;
   std::memcpy( &uid, &id, sizeof( uint16_t ) );
-  uid = htole16( uid );
+  uid = hosttole16( uid );
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 2 ) = uid;
   // Write the serialized object
   size_t serialized_size = util::serialize<T>( obj, obj_buffer_.data() + 6 );
   // Write the size of the serialized object
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 4 ) =
-      htole16( static_cast<uint16_t>( serialized_size ) );
+      hosttole16( static_cast<uint16_t>( serialized_size ) );
   assert( serialized_size == size - 8 && "Serialized size does not match expected size" );
   // Write the CRC
   *reinterpret_cast<uint16_t *>( obj_buffer_.data() + 6 + serialized_size ) =
-      htole16( util::compute_crc16( obj_buffer_.data(), 6 + serialized_size ) );
+      hosttole16( util::compute_crc16( obj_buffer_.data(), 6 + serialized_size ) );
   serial_->write( obj_buffer_.data(), size );
   return WriteResult::Success;
 }

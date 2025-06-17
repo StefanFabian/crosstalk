@@ -5,7 +5,7 @@ import shutil
 INCLUDE_DIR = "include/crosstalk"
 DIST_DIR = "dist"
 OUTPUT_HEADER = "crosstalk.hpp"
-HEADERS = ["refl.hpp", "serial_abstraction.hpp", "crosstalker.hpp"]
+HEADERS = ["refl.hpp", "endian.hpp", "serial_abstraction.hpp", "crosstalker.hpp"]
 
 
 def strip_includes(content, to_strip):
