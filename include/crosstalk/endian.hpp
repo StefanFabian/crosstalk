@@ -45,55 +45,58 @@ inline const bool is_little_endian = []() { return ( *(const uint16_t *)"\x01\x0
 #endif
 
 #if defined( __cpp_lib_byteswap ) && __cpp_lib_byteswap >= 202110L
-inline constexpr uint16_t byteswap( uint16_t value ) { return std::byteswap( value ); }
+constexpr uint16_t byteswap( uint16_t value ) { return std::byteswap( value ); }
 
-inline constexpr uint32_t byteswap( uint32_t value ) { return std::byteswap( value ); }
+constexpr uint32_t byteswap( uint32_t value ) { return std::byteswap( value ); }
 
-inline constexpr uint64_t byteswap( uint64_t value ) { return std::byteswap( value ); }
+constexpr uint64_t byteswap( uint64_t value ) { return std::byteswap( value ); }
 #else
-inline constexpr uint16_t byteswap( uint16_t value ) { return ( value << 8 ) | ( value >> 8 ); }
+constexpr uint16_t byteswap( uint16_t value )
+{
+  return static_cast<uint16_t>( value << 8 ) | static_cast<uint16_t>( value >> 8 );
+}
 
-inline constexpr uint32_t byteswap( uint32_t value )
+constexpr uint32_t byteswap( uint32_t value )
 {
   return ( ( value & 0x000000FF ) << 24 ) | ( ( value & 0x0000FF00 ) << 8 ) |
          ( ( value & 0x00FF0000 ) >> 8 ) | ( ( value & 0xFF000000 ) >> 24 );
 }
 
-inline constexpr uint64_t byteswap( uint64_t value )
+constexpr uint64_t byteswap( uint64_t value )
 {
-  return ( ( value & 0x00000000000000FFull ) << 56 ) | ( ( value & 0x000000000000FF00ull ) << 40 ) |
-         ( ( value & 0x0000000000FF0000ull ) << 24 ) | ( ( value & 0x00000000FF000000ull ) << 8 ) |
-         ( ( value & 0x000000FF00000000ull ) >> 8 ) | ( ( value & 0x0000FF0000000000ull ) >> 24 ) |
-         ( ( value & 0x00FF000000000000ull ) >> 40 ) | ( ( value & 0xFF00000000000000ull ) >> 56 );
+  return ( ( value & 0x00000000000000FFuLL ) << 56 ) | ( ( value & 0x000000000000FF00uLL ) << 40 ) |
+         ( ( value & 0x0000000000FF0000uLL ) << 24 ) | ( ( value & 0x00000000FF000000uLL ) << 8 ) |
+         ( ( value & 0x000000FF00000000uLL ) >> 8 ) | ( ( value & 0x0000FF0000000000uLL ) >> 24 ) |
+         ( ( value & 0x00FF000000000000uLL ) >> 40 ) | ( ( value & 0xFF00000000000000uLL ) >> 56 );
 }
 #endif
 
-inline constexpr uint16_t hosttole16( uint16_t value )
+constexpr uint16_t hosttole16( uint16_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
 
-inline constexpr uint32_t hosttole32( uint32_t value )
+constexpr uint32_t hosttole32( uint32_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
 
-inline constexpr uint64_t hosttole64( uint64_t value )
+constexpr uint64_t hosttole64( uint64_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
 
-inline constexpr uint16_t le16tohost( uint16_t value )
+constexpr uint16_t le16tohost( uint16_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
 
-inline constexpr uint32_t le32tohost( uint32_t value )
+constexpr uint32_t le32tohost( uint32_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
 
-inline constexpr uint64_t le64tohost( uint64_t value )
+constexpr uint64_t le64tohost( uint64_t value )
 {
   return is_little_endian ? value : byteswap( value );
 }
