@@ -23,9 +23,9 @@
 #ifndef CROSSTALK_CROSSTALKER_HPP
 #define CROSSTALK_CROSSTALKER_HPP
 
+#include "endian.hpp"
 #include "refl.hpp"
 #include "serial_abstraction.hpp"
-#include "endian.hpp"
 #include <cassert>
 #include <stddef.h>
 #include <vector>
@@ -43,6 +43,12 @@ struct id : public refl::attr::usage::type {
 
   explicit constexpr id( const int16_t id ) noexcept : id_value( id ) { }
 };
+
+template<typename T>
+constexpr int16_t object_id() noexcept
+{
+  return std::get<id>( refl::type_descriptor<T>::attributes ).id_value;
+}
 
 enum class ReadResult : uint8_t {
   Success = 0,

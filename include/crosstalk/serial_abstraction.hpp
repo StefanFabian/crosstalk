@@ -33,6 +33,8 @@ namespace crosstalk
 class SerialAbstraction
 {
 public:
+  virtual ~SerialAbstraction() = default;
+
   virtual int available() const = 0;
 
   virtual int read( uint8_t *data, size_t length ) = 0;

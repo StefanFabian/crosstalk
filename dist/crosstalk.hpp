@@ -4940,6 +4940,8 @@ namespace crosstalk
 class SerialAbstraction
 {
 public:
+  virtual ~SerialAbstraction() = default;
+
   virtual int available() const = 0;
 
   virtual int read( uint8_t *data, size_t length ) = 0;
@@ -4993,6 +4995,12 @@ struct id : public refl::attr::usage::type {
 
   explicit constexpr id( const int16_t id ) noexcept : id_value( id ) { }
 };
+
+template<typename T>
+constexpr int16_t object_id() noexcept
+{
+  return std::get<id>( refl::type_descriptor<T>::attributes ).id_value;
+}
 
 enum class ReadResult : uint8_t {
   Success = 0,

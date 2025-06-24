@@ -1,12 +1,21 @@
 # Crosstalk
 
-Crosstalk is a small single-header C++ 17 library to facilitate communication between microcontrollers and host computers
+Crosstalk is a small single-header C++ 17 library to facilitate communication between microcontrollers and host
+computers
 over serial connections.
 
 It uses reflection (via [refl-cpp](https://github.com/veselink1/refl-cpp)) to automatically generate serialization and
 deserialization code for user-defined types.
-The objects are injected into the serial stream and crosstalk intelligently handles the reading of objects and generic data.
+The objects are injected into the serial stream and crosstalk intelligently handles the reading of objects and generic
+data.
 This means you can keep your logging without having to worry about the serialization of your objects.
+
+## Usage
+
+Copy the `crosstalk.hpp` file and the relevant serial abstraction from the dist folder into your project and include it
+in your code.
+If there is no fitting serial abstraction for your platform, you can implement your own by inheriting from the
+`crosstalk::SerialAbstraction` class.
 
 ## Example
 
@@ -32,12 +41,12 @@ REFL_AUTO(type(MyData, crosstalk::id(1)),
 #include "shared_code.hpp"
 #include "crosstalk_hardware_serial_abstraction.hpp"
 
-// The 512 is the maximum size of the serial buffer, the 64 the size of the
+// The 512 is the maximum size of the serial buffer, the 256 the size of the
 // serialization buffer. The sizes can be adjusted to your needs, but the
 // serialization buffer should be large enough to hold the largest object and
 // the serial buffer should be at least as large as the largest object you want
 // to send.
-crosstalk::CrossTalker<512, 64> crosstalk(
+crosstalk::CrossTalker<512, 256> crosstalk(
     std::make_unique<crosstalk::HardwareSerialWrapper<HWCDC>>(Serial));
 
 void setup() {
@@ -81,7 +90,7 @@ int main() {
     if (!crosstalker.hasObject()) continue;
     switch (crosstalker.getObjectId()) {
       // To make it verbose and robust to changes of the id, we could also use `case 1:` if we're certain the id won't change
-      case std::get<crosstalk::id>(refl::reflect<MyData>().attributes).id_value: {
+      case crosstalk::object_id<MyData>(): {
         MyData data;
         auto result = crosstalker.readObject(data);
         if (result != crosstalk::ReadObjectResult::Success) {
