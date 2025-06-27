@@ -5011,7 +5011,37 @@ enum class ReadResult : uint8_t {
   ObjectSizeMismatch = 5, // This is usually when types without clear size are used like int or long
 };
 
+inline std::string to_string( ReadResult result )
+{
+  switch ( result ) {
+  case ReadResult::Success:
+    return "Success";
+  case ReadResult::NoObjectAvailable:
+    return "NoObjectAvailable";
+  case ReadResult::NotEnoughData:
+    return "NotEnoughData";
+  case ReadResult::CrcError:
+    return "CrcError";
+  case ReadResult::ObjectIdMismatch:
+    return "ObjectIdMismatch";
+  case ReadResult::ObjectSizeMismatch:
+    return "ObjectSizeMismatch";
+  }
+  return "UnknownReadResult";
+}
+
 enum class WriteResult : uint8_t { Success = 0, ObjectTooLarge = 1 };
+
+inline std::string to_string( WriteResult result )
+{
+  switch ( result ) {
+  case WriteResult::Success:
+    return "Success";
+  case WriteResult::ObjectTooLarge:
+    return "ObjectTooLarge";
+  }
+  return "UnknownWriteResult";
+}
 
 template<int BUFFER_SIZE = 512, int SERIALIZATION_BUFFER_SIZE = BUFFER_SIZE / 2>
 class CrossTalker
