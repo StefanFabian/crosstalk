@@ -49,13 +49,17 @@ On the receiver side, you need to follow the following structure in a loop:
 struct MyData {
   std::string name;
   float measurement;
-  uint32_t timestamp;
+  uint32_t timestamp; // Make sure to use types with fixed size! Avoid: int, long, etc.
 };
 
 // The id needs to be unique for each type you want to serialize.
 REFL_AUTO(type(MyData, crosstalk::id(1)),
     field(name), field(measurement), field(timestamp))
 ```
+
+>[!WARNING]
+> Only use numerical types with a fixed size such as `int32_t`, `uint32_t`, `float`, `double`, etc.  
+> Avoid using types like `int` or `long` as their size may vary across platforms.
 
 ### Microcontroller code (e.g. ESP32 using Arduino framework)
 
