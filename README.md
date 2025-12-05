@@ -90,6 +90,17 @@ void loop() {
 }
 ```
 
+>[!NOTE]
+> You probably need to set the C++ standard to 17 in your microcontroller project.  
+> For PlatformIO, this can be done by adding the following to the `platformio.ini`:
+> ```
+> build_flags = 
+>    -std=c++17
+>    -std=gnu++17
+> build_unflags =
+>    -std=gnu++11
+> ```
+
 ### Host code (e.g. Linux using LibSerial)
 
 ```cpp
